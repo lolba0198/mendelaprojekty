@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake</title>
+    <style>
+        .kom {
+            width: 20px;
+            height: 20px;
+            border: 1px solid black;
+            float: left;
+        }
+
+        #pole {
+            margin: 20px;
+            overflow: hidden;
+        }
+
+        .snake {
+            background: red;
+        }
+
+        .food {
+            background: yellow;
+        }
+
+        .wall {
+            background: greenyellow;
+        }
+
+
+    </style>
+</head>
+
+<body onkeydown="keyDown(event)">
+    <div id="pole"></div>
+
+    <script>
+        const pole = document.getElementById("pole");
+        const sizex = 20;
+        const sizey = 20;
+        let dirchange = true;
+
+        // generowanie planszy z ścianami
+        for (let y = 0; y < sizey; y++) {
+            for (let x = 0; x < sizex; x++) {
+                let classes = `kom x-${x} y-${y}`;
+                if (x === 0 || x === sizex - 1 || y === 0 || y === sizey - 1) {
+                    classes += " wall";
+                }
+                pole.innerHTML += `<div class='${classes}'></div>`;
+            }
+        }
+        pole.style.width = (sizex * 22) + "px";
+
+        function cell(x, y) {
+            return document.querySelector(`.x-${x}.y-${y}`);
+        }
+
+        // wąż
+        let snake = [{ x: 10, y: 10 }];
+        let dir = "right";
+        let food = null;
+        let gameInterval = null;
+
+
+        
+
+        function spawnFood() {
+            let x, y;
+            do {
+                x = Math.floor(Math.random() * (sizex - 2)) + 1;
+                y = Math.floor(Math.random() * (sizey - 2)) + 1;
+            } while (snake.some(seg => seg.x === x && seg.y === y));
+            food = { x, y };
+            cell(x, y).classList.add("food");
+        }
+
+        function keyDown(e) {
+            if (!dirchange) return;
+            if (e.key === "ArrowUp" && dir !== "down") { dir = "up"; dirchange = false; }
+            if (e.key === "ArrowDown" && dir !== "up") { dir = "down"; dirchange = false; }
+            if (e.key === "ArrowLeft" && dir !== "right") { dir = "left"; dirchange = false; }
+            if (e.key === "ArrowRight" && dir !== "left") { dir = "right"; dirchange = false; }
+        }
+
+        function gameStep() {
+            let head = { ...snake[0] };
+            if (dir === "up") head.y--;
+            if (dir === "down") head.y++;
+            if (dir === "left") head.x--;
+            if (dir === "right") head.x++;
+
+            // kolizja ze ścianą
+            if (head.x <= 0 || head.x >= sizex - 1 || head.y <= 0 || head.y >= sizey - 1) {
+                return gameOver();
+            }
+
+            // kolizja z samym sobą
+            if (snake.slice(0, -1).some(seg => seg.x === head.x && seg.y === head.y)) {
+                return gameOver();
+            }
+
+            snake.unshift(head);
+
+            // jedzenie
+            if (food && head.x === food.x && head.y === food.y) {
+                cell(food.x, food.y).classList.remove("food");
+                spawnFood();
+            } else {
+                let tail = snake.pop();
+                cell(tail.x, tail.y).classList.remove("snake");
+            }
+
+            drawSnake();
+            dirchange = true;
+        }
+
+        function drawSnake() {
+            snake.forEach(seg => {
+                cell(seg.x, seg.y).classList.add("snake");
+            });
+        }
+
+        function resetGame() {
+            document.querySelectorAll(".snake").forEach(e => e.classList.remove("snake"));
+            document.querySelectorAll(".food").forEach(e => e.classList.remove("food"));
+            snake = [{ x: 10, y: 10 }];
+            dir = "right";
+            drawSnake();
+            spawnFood();
+            clearInterval(gameInterval);
+            gameInterval = setInterval(gameStep, 150);
+        }
+
+        function gameOver() {
+            clearInterval(gameInterval);
+            alert("Game Over!");
+            resetGame();
+        }
+
+        drawSnake();
+        spawnFood();
+        gameInterval = setInterval(gameStep, 150);
+    </script>
+</body>
+
+</html>
