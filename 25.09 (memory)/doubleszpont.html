@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Memory – wersja prosta</title>
+
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+}
+
+#board {
+  width: 420px;
+  margin: 20px auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  display: none;
+}
+
+.card {
+  width: 100px;
+  height: 100px;
+  border: 2px solid gray;
+  background-image: url("img/0.jpg");
+  background-size: cover;
+  cursor: pointer;
+}
+
+#timer {
+  width: 80%;
+  height: 30px;
+  border: 2px solid gray;
+  margin: 10px auto;
+  display: none;
+}
+
+#timerFill {
+  height: 100%;
+  width: 100%;
+  background: darkgray;
+}
+
+#records {
+  margin-top: 30px;
+}
+</style>
+</head>
+
+<body>
+
+<h2 id="title">MEMORY</h2>
+
+<!-- ===== MAPA STARTOWA ===== -->
+<div id="menu">
+  <img src="img/czolowa.png" usemap="#mapa">
+  <map name="mapa">
+    <area shape="poly" coords="68,155,43,42,338,64"
+      href="#" onclick="startGame(30)">
+    <area shape="poly" coords="79,222,341,109,365,236"
+      href="#" onclick="startGame(60)">
+    <area shape="poly" coords="96,273,370,300,113,383"
+      href="#" onclick="startGame(90)">
+  </map>
+</div>
+
+<!-- ===== TIMER ===== -->
+<div id="timer">
+  <div id="timerFill"></div>
+</div>
+<div id="timeText"></div>
+
+<!-- ===== PLANSZA ===== -->
+<div id="board"></div>
+
+<!-- ===== REKORDY ===== -->
+<div id="records"></div>
+
+<script>
+
+// ===== ZMIENNE =====
+let cards = [];
+let first = null;
+let second = null;
+let lock = false;
+let found = 0;
+
+let gameTime = 0;
+let timeLeft = 0;
+let timer = null;
+
+// ===== START GRY =====
+function startGame(time) {
+  gameTime = time;
+  timeLeft = time;
+  found = 0;
+
+  document.getElementById("menu").style.display = "none";
+  document.getElementById("board").style.display = "grid";
+  document.getElementById("timer").style.display = "block";
+  document.getElementById("title").innerText = "MEMORY (" + time + "s)";
+
+  createBoard();
+  startTimer();
+}
+
+// ===== TWORZENIE KART =====
+function createBoard() {
+  let board = document.getElementById("board");
+  board.innerHTML = "";
+
+  cards = [1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8];
+  cards.sort(() => Math.random() - 0.5);
+
+  for (let i = 0; i < 16; i++) {
+    let c = document.createElement("div");
+    c.className = "card";
+    c.onclick = () => clickCard(c, i);
+    board.appendChild(c);
+  }
+}
+
+// ===== KLIK KARTY =====
+function clickCard(card, index) {
+  if (lock) return;
+  if (card.classList.contains("done")) return;
+
+  card.style.backgroundImage = "url('img/" + cards[index] + ".jpg')";
+
+  if (!first) {
+    first = { card, index };
+    return;
+  }
+
+  second = { card, index };
+  lock = true;
+
+  setTimeout(checkPair, 700);
+}
+
+// ===== SPRAWDZENIE =====
+function checkPair() {
+  if (cards[first.index] === cards[second.index]) {
+    first.card.classList.add("done");
+    second.card.classList.add("done");
+    found++;
+
+    if (found === 8) win();
+  } else {
+    first.card.style.backgroundImage = "url('img/0.jpg')";
+    second.card.style.backgroundImage = "url('img/0.jpg')";
+  }
+
+  first = null;
+  second = null;
+  lock = false;
+}
+
+// ===== TIMER =====
+function startTimer() {
+  updateTimer();
+
+  timer = setInterval(() => {
+    timeLeft -= 0.05;
+
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      alert("Koniec czasu!");
+      reset();
+    }
+
+    updateTimer();
+  }, 50);
+}
+
+function updateTimer() {
+  document.getElementById("timeText").innerText =
+    "Pozostało: " + timeLeft.toFixed(2) + " s";
+
+  document.getElementById("timerFill").style.width =
+    (timeLeft / gameTime * 100) + "%";
+}
+
+// ===== WYGRANA =====
+function win() {
+  clearInterval(timer);
+
+  let used = gameTime - timeLeft;
+  let nick = prompt("Wygrałeś! Podaj nick:");
+  if (!nick) nick = "anonim";
+
+  saveRecord(gameTime, nick, used);
+  showRecords();
+
+  alert("Brawo " + nick + "!\nCzas: " + used.toFixed(2) + " s");
+  reset();
+}
+
+// ===== RESET =====
+function reset() {
+  clearInterval(timer);
+  document.getElementById("menu").style.display = "block";
+  document.getElementById("board").style.display = "none";
+  document.getElementById("timer").style.display = "none";
+  document.getElementById("timeText").innerText = "";
+}
+
+// ===== REKORDY =====
+function saveRecord(mode, nick, time) {
+  let key = "rekordy_" + mode;
+  let list = JSON.parse(getCookie(key) || "[]");
+
+  list.push({ nick, time });
+  list.sort((a,b) => a.time - b.time);
+  list = list.slice(0,10);
+
+  setCookie(key, JSON.stringify(list));
+}
+
+function showRecords() {
+  let div = document.getElementById("records");
+  div.innerHTML = "<h3>TOP 10</h3>";
+
+  [30,60,90].forEach(t => {
+    let list = JSON.parse(getCookie("rekordy_" + t) || "[]");
+    div.innerHTML += "<b>" + t + "s</b><br>";
+
+    if (list.length === 0) {
+      div.innerHTML += "brak wyników<br>";
+    } else {
+      list.forEach(r => {
+        div.innerHTML += r.nick + " - " + r.time.toFixed(2) + " s<br>";
+      });
+    }
+    div.innerHTML += "<br>";
+  });
+}
+
+function setCookie(name, value) {
+  document.cookie = name + "=" + encodeURIComponent(value) + ";path=/";
+}
+
+function getCookie(name) {
+  let cookies = document.cookie.split("; ");
+  for (let c of cookies) {
+    let [k,v] = c.split("=");
+    if (k === name) return decodeURIComponent(v);
+  }
+  return "";
+}
+
+showRecords();
+
+</script>
+</body>
+</html>
