@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <title>Gra Memory</title>
+
+    <style>
+        body {
+            text-align: center;
+            background: white;
+            font-family: sans-serif;
+        }
+
+        h2 {
+            color: green;
+            margin-top: 20px;
+        }
+
+        #pf {
+            width: 420px;
+            margin: 20px auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .piece {
+            width: 100px;
+            height: 100px;
+            border: 2px solid gray;
+            background-size: cover;
+            background-image: url("img/0.jpg");
+            cursor: pointer;
+        }
+
+        #timer-bar {
+            width: 80%;
+            height: 50px;
+            margin: 10px auto;
+            border: 2px solid gray;
+            border-radius: 5px;
+            background: white;
+            display: none;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #timer-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: darkgray;
+            transition: width 0.05s linear;
+        }
+
+        #time-text {
+            margin: 5px;
+            font-size: 18px;
+        }
+
+        #win-message {
+            position: fixed;
+            inset: 0;
+            background: black;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #win-message button {
+            margin-top: 15px;
+            padding: 15px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2 id="title">MEMORY</h2>
+
+    <div id="timer-bar">
+        <div id="timer-fill"></div>
+    </div>
+
+    <div id="time-text"></div>
+
+    <div id="start">
+
+        <img src="img/czolowa.png" usemap="#image-map">
+
+        <map name="image-map">
+            <area onclick="startGame(30)" href="#" coords="68,155,43,42,338,64" shape="poly">
+            <area onclick="startGame(60)" href="#" coords="79,222,341,109,365,236" shape="poly">
+            <area onclick="startGame(90)" href="#" coords="96,273,370,300,113,383" shape="poly">
+        </map>
+
+    </div>
+
+
+    <div id="pf" style="display:none;">
+
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+
+    </div>
+
+
+    <script>
+
+        let obrazki = [];
+        let odkryte = [];
+        let zablokuj = false;
+        let trafienia = 0;
+
+        let graCzas = 0;
+        let pozostalyCzas = 0;
+        let timerInterval = null;
+
+        const rewers = "url('img/0.jpg')";
+
+
+        function startGame(czas) {
+
+            graCzas = czas;
+            pozostalyCzas = czas;
+
+            document.getElementById("title").innerText = "MEMORY (" + czas + "s)";
+            document.getElementById("start").style.display = "none";
+            document.getElementById("pf").style.display = "grid";
+            document.getElementById("timer-bar").style.display = "block";
+            document.getElementById("timer-fill").style.width = "100%";
+
+            document.getElementById("time-text").innerText = "Pozostały czas: " + czas + " s";
+
+            obrazki = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8];
+
+            for (let i = obrazki.length - 1; i > 0; i--) {
+
+                let r = Math.floor(Math.random() * (i + 1));
+
+                let temp = obrazki[i];
+                obrazki[i] = obrazki[r];
+                obrazki[r] = temp;
+
+            }
+
+            let karty = document.querySelectorAll(".piece");
+
+            for (let i = 0; i < karty.length; i++) {
+
+                karty[i].style.backgroundImage = rewers;
+                karty[i].classList.remove("matched");
+                karty[i].setAttribute("data-id", i);
+                karty[i].onclick = odkryjKarte;
+
+            }
+
+            odkryte = [];
+            trafienia = 0;
+            zablokuj = false;
+
+            clearInterval(timerInterval);
+            timerInterval = null;
+
+        }
+
+
+        function odkryjKarte() {
+
+            if (zablokuj) return;
+
+            if (!timerInterval) startTimer();
+
+            let karta = this;
+            let id = karta.getAttribute("data-id");
+
+            if (karta.classList.contains("matched")) return;
+
+            if (odkryte.indexOf(karta) != -1) return;
+
+            karta.style.backgroundImage = "url('img/" + obrazki[id] + ".jpg')";
+
+            odkryte.push(karta);
+
+            if (odkryte.length == 2) {
+
+                zablokuj = true;
+                setTimeout(sprawdzPare, 700);
+
+            }
+
+        }
+
+
+        function sprawdzPare() {
+
+            let k1 = odkryte[0];
+            let k2 = odkryte[1];
+
+            let id1 = k1.getAttribute("data-id");
+            let id2 = k2.getAttribute("data-id");
+
+            if (obrazki[id1] == obrazki[id2]) {
+
+                k1.classList.add("matched");
+                k2.classList.add("matched");
+
+                trafienia++;
+
+                if (trafienia == 8) {
+
+                    stopTimer();
+                    wygrana();
+
+                }
+
+            } else {
+
+                k1.style.backgroundImage = rewers;
+                k2.style.backgroundImage = rewers;
+
+            }
+
+            odkryte = [];
+            zablokuj = false;
+
+        }
+
+
+        function wygrana() {
+
+            let czas = graCzas - pozostalyCzas;
+            let nick = prompt("Gratulacje! Wygrałeś!\nPodaj nick:");
+            if (!nick) nick = "gracz";
+            let komunikat = document.createElement("div");
+
+            komunikat.id = "win-message";
+            komunikat.innerHTML = "Gratulacje " + nick + "<br>Twój czas: " + czas.toFixed(3) + " s";
+
+            let btn = document.createElement("button");
+            btn.innerText = "Zagraj ponownie";
+            btn.onclick = restartGame;
+            komunikat.appendChild(btn);
+            document.body.appendChild(komunikat);
+
+        }
+
+
+        function restartGame() {
+
+            let msg = document.getElementById("win-message");
+            if (msg) msg.remove();
+
+            document.getElementById("start").style.display = "block";
+            document.getElementById("pf").style.display = "none";
+            document.getElementById("timer-bar").style.display = "none";
+            document.getElementById("time-text").innerText = "";
+
+            clearInterval(timerInterval);
+            timerInterval = null;
+
+        }
+
+
+        function startTimer() {
+            timerInterval = setInterval(function () {
+                pozostalyCzas -= 0.04;
+                if (pozostalyCzas <= 0) {
+                    stopTimer();
+                    alert("Koniec czasu!");
+                    restartGame();
+                    return;
+                }
+
+                let proc = (pozostalyCzas / graCzas) * 100;
+
+                document.getElementById("timer-fill").style.width = proc + "%";
+
+                document.getElementById("time-text").innerText =
+                    "Pozostały czas: " + pozostalyCzas.toFixed(3) + " s";
+
+            }, 40);
+
+        }
+
+
+        function stopTimer() {
+
+            clearInterval(timerInterval);
+            timerInterval = null;
+
+        }
+
+    </script>
+
+</body>
+
+</html>
