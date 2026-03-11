@@ -1,257 +1,394 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
-<meta charset="utf-8">
-<title>Memory – wersja prosta</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Gra Memory</title>
+    <style>
+        body {
+            text-align: center;
+            background: white;
+            font-family: sans-serif;
+        }
 
-<style>
-body {
-  font-family: Arial;
-  text-align: center;
-}
+        h2 {
+            color: green;
+            margin-top: 20px;
+        }
 
-#board {
-  width: 420px;
-  margin: 20px auto;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  display: none;
-}
+        #pf {
+            width: 420px;
+            margin: 20px auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
 
-.card {
-  width: 100px;
-  height: 100px;
-  border: 2px solid gray;
-  background-image: url("img/0.jpg");
-  background-size: cover;
-  cursor: pointer;
-}
+        .piece {
+            width: 100px;
+            height: 100px;
+            border: 2px solid gray;
+            background-size: cover;
+            background-image: url("img/0.jpg");
+            cursor: pointer;
+        }
 
-#timer {
-  width: 80%;
-  height: 30px;
-  border: 2px solid gray;
-  margin: 10px auto;
-  display: none;
-}
+        #timer-bar {
+            width: 80%;
+            height: 50px;
+            margin: 10px auto;
+            border: 2px solid transparent;
+            box-sizing: border-box;
+            background: transparent;
+            display: block;
+            overflow: hidden;
+            position: relative;
+            transition: border-color 0.3s ease;
+        }
 
-#timerFill {
-  height: 100%;
-  width: 100%;
-  background: darkgray;
-}
+        #timer-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: rgb(125, 255, 125);
+            transition: width 0.05s linear;
+        }
 
-#records {
-  margin-top: 30px;
-}
-</style>
+        #timer-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            line-height: 50px;
+            font-weight: bold;
+            color: black;
+            opacity: 0;
+        }
+
+        #time-text {
+            margin: 5px;
+            font-size: 18px;
+        }
+
+        #win-message {
+            position: fixed;
+            inset: 0;
+            background: black;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #win-message button {
+            margin-top: 15px;
+            padding: 15px;
+            font-size: 18px;
+        }
+
+        #leaderboards {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+
+        .leaderboard {
+            width: 30%;
+            text-align: center;
+        }
+
+        .leaderboard h3 {
+            margin-bottom: 10px;
+        }
+
+        .leaderboard ol {
+            padding-left: 20px;
+            text-align: left;
+        }
+    </style>
 </head>
 
 <body>
 
-<h2 id="title">MEMORY</h2>
+    <h2 id="title">MEMORY</h2>
 
-<!-- ===== MAPA STARTOWA ===== -->
-<div id="menu">
-  <img src="img/czolowa.png" usemap="#mapa">
-  <map name="mapa">
-    <area shape="poly" coords="68,155,43,42,338,64"
-      href="#" onclick="startGame(30)">
-    <area shape="poly" coords="79,222,341,109,365,236"
-      href="#" onclick="startGame(60)">
-    <area shape="poly" coords="96,273,370,300,113,383"
-      href="#" onclick="startGame(90)">
-  </map>
-</div>
+    <div id="timer-bar">
+        <div id="timer-fill"></div>
+        <div id="timer-text"></div>
+    </div>
 
-<!-- ===== TIMER ===== -->
-<div id="timer">
-  <div id="timerFill"></div>
-</div>
-<div id="timeText"></div>
+    <div id="time-text"></div>
 
-<!-- ===== PLANSZA ===== -->
-<div id="board"></div>
+    <div id="nick-panel" style="display:none;">
+        <p>Gratulacje! Podaj nick:</p>
+        <input type="text" id="nick-input">
+        <button onclick="zapiszNick()">OK</button>
+    </div>
 
-<!-- ===== REKORDY ===== -->
-<div id="records"></div>
+    <div id="lose-message" style="display:none;">
+        <p>Koniec czasu!</p>
+        <button onclick="restartGame()">Spróbuj ponownie</button>
+    </div>
 
-<script>
+    <div id="start">
+        <img src="img/czolowa.png" usemap="#image-map">
+        <map name="image-map">
+            <area onclick="startGame(30)" href="#" coords="68,155,43,42,338,64" shape="poly">
+            <area onclick="startGame(60)" href="#" coords="79,222,341,109,365,236" shape="poly">
+            <area onclick="startGame(90)" href="#" coords="96,273,370,300,113,383" shape="poly">
+        </map>
+    </div>
 
-// ===== ZMIENNE =====
-let cards = [];
-let first = null;
-let second = null;
-let lock = false;
-let found = 0;
+    <div id="pf" style="display:none;">
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+        <div class="piece"></div>
+    </div>
 
-let gameTime = 0;
-let timeLeft = 0;
-let timer = null;
+    <div id="leaderboards">
+        <div class="leaderboard">
+            <h3>Top 10 – 30s</h3>
+            <ol id="records-30"></ol>
+        </div>
+        <div class="leaderboard">
+            <h3>Top 10 – 60s</h3>
+            <ol id="records-60"></ol>
+        </div>
+        <div class="leaderboard">
+            <h3>Top 10 – 90s</h3>
+            <ol id="records-90"></ol>
+        </div>
+    </div>
 
-// ===== START GRY =====
-function startGame(time) {
-  gameTime = time;
-  timeLeft = time;
-  found = 0;
+    <script>
+        let obrazki = [];
+        let odkryte = [];
+        let zablokuj = false;
+        let trafienia = 0;
+        let graCzas = 0;
+        let startCzas = 0;
+        let pozostalyCzas = 0;
+        let timerInterval = null;
+        let currentMode = "30";
+        let czasWygranej = 0; 
 
-  document.getElementById("menu").style.display = "none";
-  document.getElementById("board").style.display = "grid";
-  document.getElementById("timer").style.display = "block";
-  document.getElementById("title").innerText = "MEMORY (" + time + "s)";
+        const rewers = "url('img/0.jpg')";
 
-  createBoard();
-  startTimer();
-}
+        function formatujCzas(sekundy) {
+            let ms = Math.floor((sekundy % 1) * 1000);
+            let s = Math.floor(sekundy) % 60;
+            let m = Math.floor(sekundy / 60);
+            return m.toString().padStart(2, '0') + ":" +
+                s.toString().padStart(2, '0') + "." +
+                ms.toString().padStart(3, '0');
+        }
 
-// ===== TWORZENIE KART =====
-function createBoard() {
-  let board = document.getElementById("board");
-  board.innerHTML = "";
+        function startGame(czas) {
+            graCzas = czas;
+            currentMode = czas.toString();
+            document.getElementById("title").innerText = "MEMORY (" + czas + "s)";
+            document.getElementById("start").style.display = "none";
+            document.getElementById("pf").style.display = "grid";
 
-  cards = [1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8];
-  cards.sort(() => Math.random() - 0.5);
+            document.getElementById("timer-fill").style.width = "0%";
+            document.getElementById("timer-text").style.opacity = 0;
+            document.getElementById("timer-bar").style.borderColor = "transparent";
 
-  for (let i = 0; i < 16; i++) {
-    let c = document.createElement("div");
-    c.className = "card";
-    c.onclick = () => clickCard(c, i);
-    board.appendChild(c);
-  }
-}
+            obrazki = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8];
+            for (let i = obrazki.length - 1; i > 0; i--) {
+                let r = Math.floor(Math.random() * (i + 1));
+                [obrazki[i], obrazki[r]] = [obrazki[r], obrazki[i]];
+            }
 
-// ===== KLIK KARTY =====
-function clickCard(card, index) {
-  if (lock) return;
-  if (card.classList.contains("done")) return;
+            let karty = document.querySelectorAll(".piece");
+            for (let i = 0; i < karty.length; i++) {
+                karty[i].style.backgroundImage = rewers;
+                karty[i].classList.remove("matched");
+                karty[i].setAttribute("data-id", i);
+                karty[i].onclick = odkryjKarte;
+            }
 
-  card.style.backgroundImage = "url('img/" + cards[index] + ".jpg')";
+            odkryte = [];
+            trafienia = 0;
+            zablokuj = false;
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
 
-  if (!first) {
-    first = { card, index };
-    return;
-  }
+        function odkryjKarte() {
+            if (zablokuj) return;
+            if (!timerInterval) startTimer();
 
-  second = { card, index };
-  lock = true;
+            let karta = this;
+            let id = karta.getAttribute("data-id");
+            if (karta.classList.contains("matched")) return;
+            if (odkryte.indexOf(karta) != -1) return;
 
-  setTimeout(checkPair, 700);
-}
+            karta.style.backgroundImage = "url('img/" + obrazki[id] + ".jpg')";
+            odkryte.push(karta);
 
-// ===== SPRAWDZENIE =====
-function checkPair() {
-  if (cards[first.index] === cards[second.index]) {
-    first.card.classList.add("done");
-    second.card.classList.add("done");
-    found++;
+            if (odkryte.length == 2) {
+                zablokuj = true;
+                setTimeout(sprawdzPare, 700);
+            }
+        }
 
-    if (found === 8) win();
-  } else {
-    first.card.style.backgroundImage = "url('img/0.jpg')";
-    second.card.style.backgroundImage = "url('img/0.jpg')";
-  }
+        function sprawdzPare() {
+            let k1 = odkryte[0];
+            let k2 = odkryte[1];
+            let id1 = k1.getAttribute("data-id");
+            let id2 = k2.getAttribute("data-id");
 
-  first = null;
-  second = null;
-  lock = false;
-}
+            if (obrazki[id1] == obrazki[id2]) {
+                k1.classList.add("matched");
+                k2.classList.add("matched");
+                trafienia++;
+                if (trafienia == 8) {
+                    wygrana();
+                }
+            } else {
+                k1.style.backgroundImage = rewers;
+                k2.style.backgroundImage = rewers;
+            }
+            odkryte = [];
+            zablokuj = false;
+        }
 
-// ===== TIMER =====
-function startTimer() {
-  updateTimer();
+        function wygrana() {
+            stopTimer();
+            czasWygranej = (Date.now() - startCzas) / 1000;
+            document.getElementById("nick-panel").style.display = "block";
+        }
 
-  timer = setInterval(() => {
-    timeLeft -= 0.05;
+        function zapiszNick() {
+            let nickInput = document.getElementById("nick-input").value;
+            let nick = nickInput;
+            if (!nick) nick = "gracz";
 
-    if (timeLeft <= 0) {
-      clearInterval(timer);
-      alert("Koniec czasu!");
-      reset();
-    }
+            dodajRekord(currentMode, nick, czasWygranej);
+            pokazWszystkieRekordy();
 
-    updateTimer();
-  }, 50);
-}
+            let komunikat = document.createElement("div");
+            komunikat.id = "win-message";
+            komunikat.innerHTML = "Gratulacje " + nick + "<br>Twój czas: " + formatujCzas(czasWygranej);
 
-function updateTimer() {
-  document.getElementById("timeText").innerText =
-    "Pozostało: " + timeLeft.toFixed(2) + " s";
+            let btn = document.createElement("button");
+            btn.innerText = "Zagraj ponownie";
+            btn.onclick = restartGame;
 
-  document.getElementById("timerFill").style.width =
-    (timeLeft / gameTime * 100) + "%";
-}
+            komunikat.appendChild(btn);
+            document.body.appendChild(komunikat);
+            document.getElementById("nick-panel").style.display = "none";
+        }
 
-// ===== WYGRANA =====
-function win() {
-  clearInterval(timer);
+        function restartGame() {
+            let msg = document.getElementById("win-message");
+            if (msg) msg.remove();
 
-  let used = gameTime - timeLeft;
-  let nick = prompt("Wygrałeś! Podaj nick:");
-  if (!nick) nick = "anonim";
+            document.getElementById("start").style.display = "block";
+            document.getElementById("pf").style.display = "none";
 
-  saveRecord(gameTime, nick, used);
-  showRecords();
+            document.getElementById("timer-fill").style.width = "0%";
+            document.getElementById("timer-text").style.opacity = 0;
+            document.getElementById("timer-bar").style.borderColor = "transparent";
 
-  alert("Brawo " + nick + "!\nCzas: " + used.toFixed(2) + " s");
-  reset();
-}
+            document.getElementById("lose-message").style.display = "none";
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
 
-// ===== RESET =====
-function reset() {
-  clearInterval(timer);
-  document.getElementById("menu").style.display = "block";
-  document.getElementById("board").style.display = "none";
-  document.getElementById("timer").style.display = "none";
-  document.getElementById("timeText").innerText = "";
-}
+        function startTimer() {
+            startCzas = Date.now();
 
-// ===== REKORDY =====
-function saveRecord(mode, nick, time) {
-  let key = "rekordy_" + mode;
-  let list = JSON.parse(getCookie(key) || "[]");
+            let timerBar = document.getElementById("timer-bar");
+            timerBar.style.borderColor = "darkgray";
+            document.getElementById("timer-text").style.opacity = 1;
 
-  list.push({ nick, time });
-  list.sort((a,b) => a.time - b.time);
-  list = list.slice(0,10);
+            timerInterval = setInterval(function () {
+                let teraz = Date.now();
+                let minelo = (teraz - startCzas) / 1000;
+                pozostalyCzas = graCzas - minelo;
 
-  setCookie(key, JSON.stringify(list));
-}
+                if (pozostalyCzas <= 0) {
+                    stopTimer();
+                    document.getElementById("timer-fill").style.width = "0%";
+                    document.getElementById("timer-text").style.opacity = 0;
+                    document.getElementById("lose-message").style.display = "block";
+                    return;
+                }
 
-function showRecords() {
-  let div = document.getElementById("records");
-  div.innerHTML = "<h3>TOP 10</h3>";
+                let proc = (pozostalyCzas / graCzas) * 100;
+                document.getElementById("timer-fill").style.width = proc + "%";
+                document.getElementById("timer-text").innerText = formatujCzas(pozostalyCzas);
+            }, 40);
+        }
 
-  [30,60,90].forEach(t => {
-    let list = JSON.parse(getCookie("rekordy_" + t) || "[]");
-    div.innerHTML += "<b>" + t + "s</b><br>";
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
 
-    if (list.length === 0) {
-      div.innerHTML += "brak wyników<br>";
-    } else {
-      list.forEach(r => {
-        div.innerHTML += r.nick + " - " + r.time.toFixed(2) + " s<br>";
-      });
-    }
-    div.innerHTML += "<br>";
-  });
-}
+        // cookies kukis rekordy
 
-function setCookie(name, value) {
-  document.cookie = name + "=" + encodeURIComponent(value) + ";path=/";
-}
+        function getRecords(mode) {
+            let cookieName = "memory_records_" + mode;
+            let cookie = document.cookie.split('; ').find(row => row.startsWith(cookieName + "="));
+            if (!cookie) return [];
+            let value = cookie.split('=')[1];
+            let records = JSON.parse(decodeURIComponent(value));
+            return records;
+        }
 
-function getCookie(name) {
-  let cookies = document.cookie.split("; ");
-  for (let c of cookies) {
-    let [k,v] = c.split("=");
-    if (k === name) return decodeURIComponent(v);
-  }
-  return "";
-}
+        function saveRecords(mode, records) {
+            let cookieName = "memory_records_" + mode;
+            document.cookie = cookieName + "=" + encodeURIComponent(JSON.stringify(records)) + "; path=/; max-age=31536000";
+        }
 
-showRecords();
+        function dodajRekord(mode, nick, czas) {
+            let records = getRecords(mode);
+            records.push({ nick: nick, czas: czas });
+            records.sort(function(a, b) { return a.czas - b.czas; });
+            if (records.length > 10) records = records.slice(0, 10);
+            saveRecords(mode, records);
+        }
 
-</script>
+        function pokazRekordyDlaTrybu(mode, elementId) {
+            let list = document.getElementById(elementId);
+            list.innerHTML = "";
+            let records = getRecords(mode);
+            for (let i = 0; i < records.length; i++) {
+                let li = document.createElement("li");
+                li.innerText = records[i].nick + " - " + formatujCzas(records[i].czas);
+                list.appendChild(li);
+            }
+        }
+
+        function pokazWszystkieRekordy() {
+            pokazRekordyDlaTrybu("30", "records-30");
+            pokazRekordyDlaTrybu("60", "records-60");
+            pokazRekordyDlaTrybu("90", "records-90");
+        }
+
+        pokazWszystkieRekordy();
+    </script>
 </body>
+
 </html>
