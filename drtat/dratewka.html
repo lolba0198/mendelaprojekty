@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dratewka - The Complete Adventure</title>
+    <style>
+        @font-face {
+            font-family: 'PressStart2P';
+            src: url('PressStart2P.ttf');
+        }
+
+        body {
+            background-color: #1a1a1a;
+            font-family: 'PressStart2P', sans-serif;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 650px;
+        }
+
+        #opis-lokacji {
+            margin-bottom: 10px;
+            height: 25px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        #view-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #obrazek-kontener {
+            border: 4px solid white;
+            background-color: black;
+            line-height: 0;
+        }
+
+        img#foto {
+            width: 642px;
+            height: 360px;
+            image-rendering: pixelated;
+        }
+
+        .tekst-gry {
+            margin: 8px 0;
+            min-height: 1.2em;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        #pole-wpisywania {
+            margin-top: 20px;
+            display: flex;
+            border-top: 1px solid #444;
+            padding-top: 10px;
+        }
+
+        input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-family: 'PressStart2P';
+            font-size: 16px;
+            outline: none;
+            width: 100%;
+            margin-left: 10px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body onclick="document.getElementById('komenda').focus()">
+    <div id="game-container">
+        <div id="opis-lokacji" class="tekst-gry"></div>
+        <div id="view-area">
+            <div id="obrazek-kontener"><img id="foto" src="" alt=""></div>
+        </div>
+        <div id="widok-tekstowy">
+            <div id="wyjscia" class="tekst-gry"></div>
+            <div id="widzisz" class="tekst-gry"></div>
+            <div id="ekwipunek" class="tekst-gry"></div>
+            <div id="komunikat" class="tekst-gry" style="color: yellow;"></div>
+        </div>
+        <div id="pole-wpisywania">
+            <span>WHAT NOW?</span>
+            <input type="text" id="komenda" autofocus autocomplete="off">
+        </div>
+    </div>
+
+    <script>
+        const przedmiotyInfo = {
+            10: { d: "a KEY", f: 1, n: "KEY" }, 11: { d: "an AXE", f: 1, n: "AXE" },
+            12: { d: "STICKS", f: 1, n: "STICKS" }, 13: { d: "sheeplegs", f: 0, n: "SHEEPLEGS" },
+            14: { d: "MUSHROOMS", f: 1, n: "MUSHROOMS" }, 15: { d: "MONEY", f: 1, n: "MONEY" },
+            16: { d: "a BARREL", f: 1, n: "BARREL" }, 17: { d: "sheeptrunk", f: 0, n: "SHEEPTRUNK" },
+            18: { d: "BERRIES", f: 1, n: "BERRIES" }, 19: { d: "WOOL", f: 1, n: "WOOL" },
+            20: { d: "a sheepskin", f: 0, n: "SHEEPSKIN" }, 21: { d: "a BAG", f: 1, n: "BAG" },
+            22: { d: "a RAG", f: 1, n: "RAG" }, 23: { d: "a sheephead", f: 0, n: "SHEEPHEAD" },
+            24: { d: "a SPADE", f: 1, n: "SPADE" }, 25: { d: "SULPHUR", f: 1, n: "SULPHUR" },
+            26: { d: "a solid poison", f: 0, n: "SOLID POISON" }, 27: { d: "a BUCKET", f: 1, n: "BUCKET" },
+            28: { d: "TAR", f: 1, n: "TAR" }, 29: { d: "a liquid poison", f: 0, n: "LIQUID POISON" },
+            30: { d: "a dead dragon", f: 0, n: "DEAD DRAGON" }, 31: { d: "a STONE", f: 1, n: "STONE" },
+            32: { d: "a FISH", f: 1, n: "FISH" }, 33: { d: "a KNIFE", f: 1, n: "KNIFE" },
+            34: { d: "a DRAGONSKIN", f: 1, n: "DRAGONSKIN" }, 35: { d: "a dragonskin SHOES", f: 1, n: "SHOES" },
+            36: { d: "a PRIZE", f: 1, n: "PRIZE" }, 37: { d: "a SHEEP", f: 1, n: "SHEEP" }
+        };
+
+        const locations = [
+            [
+                { desc: "You are inside a brimstone mine", path: "11.gif", rgb: "rgb(235,211,64)", directions: ["EAST"], items: [] },
+                { desc: "You are at the entrance to the mine", path: "12.gif", rgb: "rgb(89,93,87)", directions: ["WEST", "EAST"], items: [] },
+                { desc: "A hill", path: "13.gif", rgb: "rgb(117,237,243)", directions: ["SOUTH", "WEST", "EAST"], items: [31] },
+                { desc: "Some bushes", path: "14.gif", rgb: "rgb(202,230,51)", directions: ["WEST", "EAST"], items: [] },
+                { desc: "An old deserted hut", path: "15.gif", rgb: "rgb(220,204,61)", directions: ["WEST", "EAST"], items: [27] },
+                { desc: "The edge of a forest", path: "16.gif", rgb: "rgb(167,245,63)", directions: ["WEST", "EAST"], items: [] },
+                { desc: "A dark forest", path: "17.gif", rgb: "rgb(140,253,99)", directions: ["SOUTH", "WEST"], items: [14] }
+            ],
+            [
+                { desc: "A man nearby making tar", path: "21.gif", rgb: "rgb(255,190,99)", directions: ["SOUTH", "EAST"], items: [] },
+                { desc: "A timber yard", path: "22.gif", rgb: "rgb(255,190,99)", directions: ["SOUTH", "WEST"], items: [] },
+                { desc: "You are by a roadside shrine", path: "23.gif", rgb: "rgb(167,245,63)", directions: ["NORTH", "SOUTH", "WEST", "EAST"], items: [10] },
+                { desc: "You are by a small chapel", path: "24.gif", rgb: "rgb(212,229,36)", directions: ["WEST", "EAST"], items: [] },
+                { desc: "You are on a road leading to a wood", path: "25.gif", rgb: "rgb(167,245,63)", directions: ["SOUTH", "WEST", "EAST"], items: [] },
+                { desc: "You are in a forest", path: "26.gif", rgb: "rgb(167,245,63)", directions: ["WEST", "EAST"], items: [] },
+                { desc: "You are in a deep forest", path: "27.gif", rgb: "rgb(140,253,99)", directions: ["NORTH", "WEST"], items: [18] }
+            ],
+            [
+                { desc: "You are by the Vistula River", path: "31.gif", rgb: "rgb(122,232,252)", directions: ["NORTH", "EAST"], items: [] },
+                { desc: "You are by the Vistula River", path: "32.gif", rgb: "rgb(140,214,255)", directions: ["NORTH", "WEST"], items: [32] },
+                { desc: "You are on a bridge over river", path: "33.gif", rgb: "rgb(108,181,242)", directions: ["NORTH", "SOUTH"], items: [] },
+                { desc: "You are by the old tavern", path: "34.gif", rgb: "rgb(255,189,117)", directions: ["EAST"], items: [] },
+                { desc: "You are at the town's end", path: "35.gif", rgb: "rgb(255,190,99)", directions: ["NORTH", "SOUTH", "WEST", "EAST"], items: [] },
+                { desc: "You are in a butcher's shop", path: "36.gif", rgb: "rgb(255,188,102)", directions: ["SOUTH", "WEST"], items: [] },
+                { desc: "You are in a cooper's house", path: "37.gif", rgb: "rgb(255,188,102)", directions: ["SOUTH"], items: [] }
+            ],
+            [
+                { desc: "You are in the Wawel Castle", path: "41.gif", rgb: "rgb(255,176,141)", directions: ["EAST"], items: [] },
+                { desc: "You are inside a dragon's cave", path: "42.gif", rgb: "rgb(198,205,193)", directions: ["WEST", "EAST"], items: [] },
+                { desc: "A perfect place to set a trap", path: "43.gif", rgb: "rgb(255,176,141)", directions: ["NORTH", "WEST"], items: [] },
+                { desc: "You are by the water mill", path: "44.gif", rgb: "rgb(255,190,99)", directions: ["EAST"], items: [21] },
+                { desc: "You are at a main crossroad", path: "45.gif", rgb: "rgb(255,190,99)", directions: ["NORTH", "SOUTH", "WEST", "EAST"], items: [] },
+                { desc: "You are on a town street", path: "46.gif", rgb: "rgb(255,190,99)", directions: ["NORTH", "SOUTH", "WEST", "EAST"], items: [] },
+                { desc: "You are in a frontyard of your house", path: "47.gif", rgb: "rgb(255,190,99)", directions: ["NORTH", "SOUTH", "WEST"], items: [] }
+            ],
+            [
+                { desc: "", path: "", rgb: "", directions: [], items: [] },
+                { desc: "", path: "", rgb: "", directions: [], items: [] },
+                { desc: "", path: "", rgb: "", directions: [], items: [] },
+                { desc: "You are by a swift stream", path: "54.gif", rgb: "rgb(108,181,242)", directions: ["EAST"], items: [] },
+                { desc: "You are on a street leading forest", path: "55.gif", rgb: "rgb(255,190,99)", directions: ["NORTH", "SOUTH", "WEST"], items: [33] },
+                { desc: "You are in a woodcutter's backyard", path: "56.gif", rgb: "rgb(255,190,99)", directions: ["NORTH", "SOUTH"], items: [] },
+                { desc: "You are in a shoemaker's house", path: "57.gif", rgb: "rgb(254,194,97)", directions: ["NORTH"], items: [] }
+            ],
+            [
+                { desc: "", path: "", rgb: "", directions: [], items: [] },
+                { desc: "", path: "", rgb: "", directions: [], items: [] },
+                { desc: "", path: "", rgb: "", directions: [], items: [] },
+                { desc: "You are in a bleak funeral house", path: "64.gif", rgb: "rgb(254,194,97)", directions: ["EAST"], items: [24] },
+                { desc: "You are on a path leading to the wood", path: "65.gif", rgb: "rgb(167,245,63)", directions: ["NORTH", "WEST", "EAST"], items: [] },
+                { desc: "You are at the edge of a forest", path: "66.gif", rgb: "rgb(167,245,63)", directions: ["NORTH", "WEST", "EAST"], items: [] },
+                { desc: "You are in a deep forest", path: "67.gif", rgb: "rgb(140,253,99)", directions: ["WEST"], items: [] }
+            ]
+        ];
+
+        const zaleznosci = [
+            { id: 10, loc: "56", res: 11, msg: "You opened a tool shed and took an axe", ok: false },
+            { id: 11, loc: "67", res: 12, msg: "You cut sticks for sheeplegs", ok: false },
+            { id: 12, loc: "43", res: 13, msg: "You prepared legs for your fake sheep", ok: true },
+            { id: 14, loc: "34", res: 15, msg: "The tavern owner paid you money", ok: false },
+            { id: 15, loc: "37", res: 16, msg: "The cooper sold you a new barrel", ok: false },
+            { id: 16, loc: "43", res: 17, msg: "You made a nice sheeptrunk", ok: true },
+            { id: 18, loc: "36", res: 19, msg: "The butcher gave you wool", ok: false },
+            { id: 19, loc: "43", res: 20, msg: "You prepared skin for your fake sheep", ok: true },
+            { id: 21, loc: "57", res: 22, msg: "You used your tools to make a rag", ok: false },
+            { id: 22, loc: "43", res: 23, msg: "You made a fake sheephead", ok: true },
+            { id: 24, loc: "11", res: 25, msg: "You are digging...", ok: false, delay: true },
+            { id: 25, loc: "43", res: 26, msg: "You prepared a solid poison", ok: true },
+            { id: 27, loc: "21", res: 28, msg: "You got a bucket full of tar", ok: false },
+            { id: 28, loc: "43", res: 29, msg: "You prepared a liquid poison", ok: true },
+            { id: 37, loc: "43", res: 30, msg: "The dragon noticed your gift...", ok: true, delay: true, dragonKill: true },
+            { id: 33, loc: "43", res: 34, msg: "You cut a piece of dragon's skin", ok: false, needsDeadDragon: true },
+            { id: 34, loc: "57", res: 35, msg: "You used your tools to make shoes", ok: false },
+            { id: 35, loc: "41", res: 36, msg: "The King is impressed by your shoes", ok: false, win: true }
+        ];
+
+        class SilnikGry {
+            constructor() {
+                this.currentRow = 3; this.currentCol = 6;
+                this.ekwipunekID = null;
+                this.milestones = 0;
+                this.dragonDead = false;
+                this.timerKomunikatu = null;
+                this.trybTekstowy = false;
+                this.inputEl = document.getElementById('komenda');
+                this.setupFocus();
+                this.wyswietlLokacje();
+            }
+
+            setupFocus() {
+                this.inputEl.addEventListener('blur', () => { if (!this.trybTekstowy) setTimeout(() => this.inputEl.focus(), 10); });
+                document.addEventListener('click', () => { if (!this.trybTekstowy) this.inputEl.focus(); });
+            }
+
+            wyswietlLokacje() {
+                this.trybTekstowy = false;
+                const lok = locations[this.currentRow][this.currentCol];
+                document.querySelectorAll('.tekst-gry').forEach(el => el.style.display = "block");
+                document.getElementById('pole-wpisywania').style.visibility = "visible";
+
+                document.getElementById('opis-lokacji').innerText = lok.desc;
+                document.getElementById('foto').src = "img/" + lok.path;
+                document.getElementById('obrazek-kontener').style.backgroundColor = lok.rgb;
+                document.getElementById('wyjscia').innerText = "YOU CAN GO " + (lok.directions.join(", ") || "NOWHERE");
+
+                const itemyNaZiemi = lok.items.map(id => przedmiotyInfo[id].d);
+                document.getElementById('widzisz').innerText = itemyNaZiemi.length > 0 ? "YOU SEE " + itemyNaZiemi.join(", ") : "YOU SEE NOTHING";
+                document.getElementById('ekwipunek').innerText = this.ekwipunekID ? "YOU ARE CARRYING " + przedmiotyInfo[this.ekwipunekID].d : "YOU ARE CARRYING NOTHING";
+                this.inputEl.focus();
+            }
+
+            pokazScianeTekstu(tekst) {
+                this.trybTekstowy = true;
+                document.getElementById('widzisz').style.display = "none";
+                document.getElementById('ekwipunek').style.display = "none";
+                document.getElementById('komunikat').style.display = "none";
+                document.getElementById('pole-wpisywania').style.visibility = "hidden";
+                document.getElementById('wyjscia').innerText = tekst;
+            }
+
+            setKomunikat(tresc, time = 3000) {
+                const el = document.getElementById('komunikat');
+                el.innerText = tresc;
+                clearTimeout(this.timerKomunikatu);
+                this.timerKomunikatu = setTimeout(() => el.innerText = "", time);
+            }
+
+            use(nazwa) {
+                if (!this.ekwipunekID || przedmiotyInfo[this.ekwipunekID].n !== nazwa.toUpperCase()) {
+                    this.setKomunikat("YOU AREN'T CARRYING ANYTHING LIKE THAT");
+                    return;
+                }
+
+                const currentYX = (this.currentRow + 1).toString() + (this.currentCol + 1).toString();
+                const dep = zaleznosci.find(z => z.id === this.ekwipunekID && z.loc === currentYX);
+
+                if (!dep) {
+                    this.setKomunikat("NOTHING HAPPENED");
+                    return;
+                }
+
+                if (dep.needsDeadDragon && !this.dragonDead) {
+                    this.setKomunikat("NOTHING HAPPENED");
+                    return;
+                }
+
+                const execute = () => {
+                    this.setKomunikat(dep.msg);
+
+                    if (dep.dragonKill) {
+                        this.dragonDead = true;
+                        locations[3][1].path = "DS68.gif"; // Zmiana grafiki na martwego smoka
+                        locations[3][1].desc = "You are inside a dragon's cave with a dead dragon";
+                        this.setKomunikat("The dragon ate your sheep and died!");
+                    }
+
+                    if (dep.ok) {
+                        this.milestones++;
+                        locations[this.currentRow][this.currentCol].items.push(dep.res);
+                        this.ekwipunekID = null;
+
+                        if (this.milestones === 6) {
+                            const lok = locations[this.currentRow][this.currentCol];
+                            this.setKomunikat("Your fake sheep is full of poison and ready to be eaten by the dragon");
+                            lok.items = lok.items.filter(i => ![13, 17, 20, 23, 26, 29].includes(i));
+                            lok.items.push(37); // Gotowa owca
+                        }
+                    } else {
+                        this.ekwipunekID = dep.res;
+                    }
+
+                    if (dep.win) {
+                        setTimeout(() => {
+                            document.body.innerHTML = "<div style='text-align:center; margin-top:100px;'><h1>YOU WON!</h1><img src='img/win.gif'></div>";
+                        }, 2000);
+                    }
+                    this.wyswietlLokacje();
+                };
+
+                if (dep.delay) {
+                    const dots = dep.msg.split("...");
+                    this.setKomunikat(dots[0] + "...");
+                    setTimeout(execute, 2000);
+                } else execute();
+            }
+
+            ruszSie(k) {
+                const lok = locations[this.currentRow][this.currentCol];
+                let dir = k.length === 1 ? { "N": "NORTH", "S": "SOUTH", "E": "EAST", "W": "WEST" }[k] : k;
+
+                if (lok.directions.includes(dir)) {
+                    if (dir === "NORTH") this.currentRow--;
+                    if (dir === "SOUTH") this.currentRow++;
+                    if (dir === "EAST") this.currentCol++;
+                    if (dir === "WEST") this.currentCol--;
+                    this.wyswietlLokacje();
+                } else this.setKomunikat("YOU CAN'T GO THAT WAY");
+            }
+
+            take(nazwa) {
+                const lok = locations[this.currentRow][this.currentCol];
+                const id = Object.keys(przedmiotyInfo).find(key => przedmiotyInfo[key].n === nazwa.trim().toUpperCase());
+                if (!id || !lok.items.includes(parseInt(id))) { this.setKomunikat("THERE ISN'T ANYTHING LIKE THAT HERE"); return; }
+                if (przedmiotyInfo[id].f === 0) { this.setKomunikat("YOU CAN'T CARRY IT"); return; }
+                if (this.ekwipunekID !== null) { this.setKomunikat("YOU ARE CARRYING SOMETHING"); return; }
+                this.ekwipunekID = parseInt(id);
+                lok.items = lok.items.filter(item => item !== this.ekwipunekID);
+                this.setKomunikat("YOU ARE TAKING " + przedmiotyInfo[id].d);
+                this.wyswietlLokacje();
+            }
+
+            drop(nazwa) {
+                if (this.ekwipunekID === null || przedmiotyInfo[this.ekwipunekID].n !== nazwa.trim().toUpperCase()) { this.setKomunikat("YOU ARE NOT CARRYING IT"); return; }
+                const lok = locations[this.currentRow][this.currentCol];
+                if (lok.items.filter(id => przedmiotyInfo[id].f === 1).length >= 3) { this.setKomunikat("YOU CAN'T STORE ANY MORE HERE"); return; }
+                lok.items.push(this.ekwipunekID);
+                this.ekwipunekID = null;
+                this.wyswietlLokacje();
+            }
+        }
+
+        const gra = new SilnikGry();
+
+        document.addEventListener('keydown', (e) => {
+            if (gra.trybTekstowy) { gra.wyswietlLokacje(); return; }
+            if (e.key === "Enter") {
+                const val = gra.inputEl.value.trim().toUpperCase();
+                gra.inputEl.value = "";
+                if (!val) return;
+                const p = val.split(" ");
+                const cmd = p[0], arg = p.slice(1).join(" ");
+
+                if (["N", "NORTH", "S", "SOUTH", "E", "EAST", "W", "WEST"].includes(cmd)) gra.ruszSie(cmd);
+                else if (cmd === "T" || cmd === "TAKE") gra.take(arg);
+                else if (cmd === "D" || cmd === "DROP") gra.drop(arg);
+                else if (cmd === "U" || cmd === "USE") gra.use(arg);
+                else if (cmd === "V" || cmd === "VOCABULARY") gra.pokazScianeTekstu("NORTH or N, SOUTH or S, WEST or W, EAST or E\nTAKE or T, DROP or D, USE or U, GOSSIPS or G, VOCABULARY or V\n\nPRESS ANY KEY");
+                else if (cmd === "G" || cmd === "GOSSIPS") gra.pokazScianeTekstu("The woodcutter lost his home key...\nThe butcher likes fruit... The cooper\nis greedy... Dratewka plans to make a\npoisoned bait for the dragon... The\ntavern owner is buying food from the\npickers... Making a rag from a bag...\n\nPRESS ANY KEY");
+            }
+        });
+    </script>
+</body>
+
+</html>
