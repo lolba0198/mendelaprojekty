@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Dratewka</title>
+    <title>Dratewka - The Game</title>
     <style>
         @font-face {
             font-family: 'PressStart2P';
@@ -26,7 +26,7 @@
             width: 850px;
         }
 
-        #opis-lokacji {
+        #location-description {
             margin-bottom: 10px;
             height: 25px;
             text-align: center;
@@ -40,20 +40,19 @@
             margin-bottom: 20px;
         }
 
-        #obrazek-kontener {
+        #image-wrapper {
             border: 4px solid white;
             background-color: black;
             line-height: 0;
         }
 
-        img#foto {
+        img#view-img {
             width: 600px;
             height: 340px;
             image-rendering: pixelated;
         }
 
-        /* Sekcja Kompasu */
-        #kompas-kontener {
+        #compass-container {
             width: 160px;
             height: 160px;
             background-image: url('img/compass.png');
@@ -63,49 +62,48 @@
             flex-shrink: 0;
         }
 
-        .kompas-maska {
+        .compass-mask {
             background-color: black;
-
             position: absolute;
             display: none;
         }
 
-        #maska-N {
+        #mask-N {
             width: 30px;
             height: 9px;
             top: 0;
             left: 65px;
         }
 
-        #maska-S {
+        #mask-S {
             width: 30px;
             height: 13px;
             bottom: 85px;
             left: 65px;
         }
 
-        #maska-W {
+        #mask-W {
             width: 20px;
             height: 20px;
             left: 0;
             top: 9px;
         }
 
-        #maska-E {
+        #mask-E {
             width: 20px;
             height: 20px;
             right: 0px;
             top: 9px;
         }
 
-        .tekst-gry {
+        .game-text {
             margin: 8px 0;
             min-height: 1.2em;
             line-height: 1.4;
             white-space: pre-wrap;
         }
 
-        #pole-wpisywania {
+        #input-area {
             margin-top: 20px;
             display: flex;
             border-top: 1px solid #444;
@@ -123,35 +121,83 @@
             margin-left: 10px;
             text-transform: uppercase;
         }
+
+        input:disabled {
+            opacity: 0;
+        }
+
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #intro-img {
+            max-width: 100%;
+            max-height: 100%;
+            image-rendering: pixelated;
+        }
+
+        .win-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .win-screen img {
+            border: 4px solid white;
+            margin-bottom: 20px;
+            width: 600px;
+            image-rendering: pixelated;
+        }
     </style>
 </head>
 
-<body onclick="document.getElementById('komenda').focus()">
+<body>
+
+    <div id="intro-overlay">
+        <img id="intro-img" src="">
+        <audio id="intro-audio" src="hejnal.mp3"></audio>
+    </div>
+
     <div id="game-container">
-        <div id="opis-lokacji" class="tekst-gry"></div>
+        <div id="location-description" class="game-text"></div>
         <div id="view-area">
-            <div id="obrazek-kontener"><img id="foto" src="" alt=""></div>
-            <div id="kompas-kontener">
-                <div id="maska-N" class="kompas-maska"></div>
-                <div id="maska-S" class="kompas-maska"></div>
-                <div id="maska-W" class="kompas-maska"></div>
-                <div id="maska-E" class="kompas-maska"></div>
+            <div id="image-wrapper"><img id="view-img" src="" alt=""></div>
+            <div id="compass-container">
+                <div id="mask-N" class="compass-mask"></div>
+                <div id="mask-S" class="compass-mask"></div>
+                <div id="mask-W" class="compass-mask"></div>
+                <div id="mask-E" class="compass-mask"></div>
             </div>
         </div>
-        <div id="widok-tekstowy">
-            <div id="wyjscia" class="tekst-gry"></div>
-            <div id="widzisz" class="tekst-gry"></div>
-            <div id="ekwipunek" class="tekst-gry"></div>
-            <div id="komunikat" class="tekst-gry" style="color: yellow;"></div>
+        <div id="ui-text-area">
+            <div id="exits" class="game-text"></div>
+            <div id="visible-items" class="game-text"></div>
+            <div id="inventory" class="game-text"></div>
+            <div id="message" class="game-text" style="color: yellow;"></div>
         </div>
-        <div id="pole-wpisywania">
-            <span>WHAT NOW?</span>
-            <input type="text" id="input-komenda" id="komenda" autofocus autocomplete="off">
+        <div id="input-area">
+            <span id="prompt-label">WHAT NOW?</span>
+            <input type="text" id="command-input" autofocus autocomplete="off">
         </div>
     </div>
 
     <script>
-        const przedmiotyInfo = {
+        //   d opis
+        //   f flaga podnoszenia 1 - mozna podniesc 0 - nei
+        //   n nazwa z komend
+        const itemsData = {
             10: { d: "a KEY", f: 1, n: "KEY" }, 11: { d: "an AXE", f: 1, n: "AXE" },
             12: { d: "STICKS", f: 1, n: "STICKS" }, 13: { d: "sheeplegs", f: 0, n: "SHEEPLEGS" },
             14: { d: "MUSHROOMS", f: 1, n: "MUSHROOMS" }, 15: { d: "MONEY", f: 1, n: "MONEY" },
@@ -192,8 +238,8 @@
                 { desc: "You are by the Vistula River", path: "32.gif", rgb: "rgb(140,214,255)", directions: ["NORTH", "WEST"], items: [32] },
                 { desc: "You are on a bridge over river", path: "33.gif", rgb: "rgb(108,181,242)", directions: ["NORTH", "SOUTH"], items: [] },
                 { desc: "You are by the old tavern", path: "34.gif", rgb: "rgb(255,189,117)", directions: ["EAST"], items: [] },
-                { desc: "You are at the town's end", path: "35.gif", rgb: "rgb(255,190,99)", directions: ["NORTH", "SOUTH", "WEST", "EAST"], items: [] },
-                { desc: "You are in a butcher's shop", path: "36.gif", rgb: "rgb(255,188,102)", directions: ["SOUTH", "WEST"], items: [] },
+                { desc: "You are at the town's end", path: "35.gif", rgb: "rgb(255,190,99)", directions: ["NORTH", "SOUTH", "WEST"], items: [] },
+                { desc: "You are in a butcher's shop", path: "36.gif", rgb: "rgb(255,188,102)", directions: ["SOUTH"], items: [] },
                 { desc: "You are in a cooper's house", path: "37.gif", rgb: "rgb(255,188,102)", directions: ["SOUTH"], items: [] }
             ],
             [
@@ -206,18 +252,14 @@
                 { desc: "You are in a frontyard of your house", path: "47.gif", rgb: "rgb(255,190,99)", directions: ["NORTH", "SOUTH", "WEST"], items: [] }
             ],
             [
-                { desc: "", path: "", rgb: "", directions: [], items: [] },
-                { desc: "", path: "", rgb: "", directions: [], items: [] },
-                { desc: "", path: "", rgb: "", directions: [], items: [] },
+                null, null, null,
                 { desc: "You are by a swift stream", path: "54.gif", rgb: "rgb(108,181,242)", directions: ["EAST"], items: [] },
                 { desc: "You are on a street leading forest", path: "55.gif", rgb: "rgb(255,190,99)", directions: ["NORTH", "SOUTH", "WEST"], items: [33] },
                 { desc: "You are in a woodcutter's backyard", path: "56.gif", rgb: "rgb(255,190,99)", directions: ["NORTH", "SOUTH"], items: [] },
                 { desc: "You are in a shoemaker's house", path: "57.gif", rgb: "rgb(254,194,97)", directions: ["NORTH"], items: [] }
             ],
             [
-                { desc: "", path: "", rgb: "", directions: [], items: [] },
-                { desc: "", path: "", rgb: "", directions: [], items: [] },
-                { desc: "", path: "", rgb: "", directions: [], items: [] },
+                null, null, null,
                 { desc: "You are in a bleak funeral house", path: "64.gif", rgb: "rgb(254,194,97)", directions: ["EAST"], items: [24] },
                 { desc: "You are on a path leading to the wood", path: "65.gif", rgb: "rgb(167,245,63)", directions: ["NORTH", "WEST", "EAST"], items: [] },
                 { desc: "You are at the edge of a forest", path: "66.gif", rgb: "rgb(167,245,63)", directions: ["NORTH", "WEST", "EAST"], items: [] },
@@ -225,7 +267,10 @@
             ]
         ];
 
-        const zaleznosci = [
+        //   loc współrzędne gdzie akcja działa
+        //   res ID przedmiotu co sie dostanie po akcji
+        //   ok milestones
+        const interactions = [
             { id: 10, loc: "56", res: 11, msg: "You opened a tool shed and took an axe", ok: false },
             { id: 11, loc: "67", res: 12, msg: "You cut sticks for sheeplegs", ok: false },
             { id: 12, loc: "43", res: 13, msg: "You prepared legs for your fake sheep", ok: true },
@@ -236,282 +281,359 @@
             { id: 19, loc: "43", res: 20, msg: "You prepared skin for your fake sheep", ok: true },
             { id: 21, loc: "57", res: 22, msg: "You used your tools to make a rag", ok: false },
             { id: 22, loc: "43", res: 23, msg: "You made a fake sheephead", ok: true },
-            { id: 24, loc: "11", res: 25, msg: "You are digging...", ok: false, delays: true },
+            { id: 24, loc: "11", res: 25, msg: "You are digging...", ok: false, delay: true },
             { id: 25, loc: "43", res: 26, msg: "You prepared a solid poison", ok: true },
             { id: 27, loc: "21", res: 28, msg: "You got a bucket full of tar", ok: false },
             { id: 28, loc: "43", res: 29, msg: "You prepared a liquid poison", ok: true },
-            { id: 37, loc: "43", res: 30, msg: "The dragon noticed your gift...", ok: true, delay: true, dragonKill: true },
-            { id: 33, loc: "43", res: 34, msg: "You cut a piece of dragon's skin", ok: false, needsDeadDragon: true },
+            { id: 37, loc: "43", res: null, msg: "The dragon noticed your gift...", ok: true, delay: true, dragonKill: true },
+            { id: 33, loc: "42", res: 34, msg: "You cut a piece of dragon's skin", ok: false, needsDeadDragon: true },
             { id: 34, loc: "57", res: 35, msg: "You used your tools to make shoes", ok: false },
-            { id: 35, loc: "41", res: 36, msg: "The King is impressed by your shoes", ok: false, win: true }
+            { id: 35, loc: "41", res: 36, msg: "The King is impressed by your shoes", ok: false, win: false },
+            { id: 36, loc: "41", res: null, msg: " ", ok: false, win: true }
         ];
 
-        class SilnikGry {
+        class GameEngine {
             constructor() {
+                // pozycja startowa 
                 this.currentRow = 3; this.currentCol = 6;
-                this.ekwipunekID = null;
+                this.inventoryId = null; // max 1 item
                 this.milestones = 0;
                 this.dragonDead = false;
-                this.timerKomunikatu = null;
-                this.trybTekstowy = false;
-                this.inputEl = document.getElementById('input-komenda');
+                this.messageTimer = null;
+                this.textMode = false;   // vocab/gossips
+                this.inIntro = true;
+                this.isInputLocked = false;
+                this.inputEl = document.getElementById('command-input');
+
                 this.setupFocus();
-                this.wyswietlLokacje();
+                this.startIntro();
             }
 
             setupFocus() {
+                document.addEventListener('click', () => {
+                    if (!this.textMode && !this.inIntro && !this.isInputLocked) this.inputEl.focus();
+                });
                 this.inputEl.addEventListener('blur', () => {
-                    if (!this.trybTekstowy) {
+                    if (!this.textMode && !this.inIntro && !this.isInputLocked) {
                         setTimeout(() => this.inputEl.focus(), 10);
                     }
                 });
-                document.addEventListener('click', () => {
-                    if (!this.trybTekstowy) {
-                        this.inputEl.focus();
-                    }
+            }
+
+            waitOrSkip(ms) {
+                return new Promise(resolve => {
+                    const timeout = setTimeout(() => { cleanup(); resolve(); }, ms);
+                    const handleKey = (e) => { if (e.code === "Space") { cleanup(); resolve(); } };
+                    const cleanup = () => {
+                        clearTimeout(timeout);
+                        window.removeEventListener('keydown', handleKey);
+                    };
+                    window.addEventListener('keydown', handleKey);
                 });
             }
 
-            aktualizujKompas(directions) {
-                // Najpierw  wszystkie maski
-                document.getElementById('maska-N').style.display = 'block';
-                document.getElementById('maska-S').style.display = 'block';
-                document.getElementById('maska-W').style.display = 'block';
-                document.getElementById('maska-E').style.display = 'block';
+            // intro
+            async startIntro() {
+                const overlay = document.getElementById('intro-overlay');
+                const img = document.getElementById('intro-img');
+                const audio = document.getElementById('intro-audio');
 
-                if (directions.includes("NORTH")) {
-                    document.getElementById('maska-N').style.display = 'none';
-                }
-                if (directions.includes("SOUTH")) {
-                    document.getElementById('maska-S').style.display = 'none';
-                }
-                if (directions.includes("WEST")) {
-                    document.getElementById('maska-W').style.display = 'none';
-                }
-                if (directions.includes("EAST")) {
-                    document.getElementById('maska-E').style.display = 'none';
-                }
+                this.inputEl.disabled = true;
+
+                img.src = "img/czołówka.jpg";
+                audio.play().catch(() => { });
+                await this.waitOrSkip(25000);
+                audio.pause(); audio.currentTime = 0;
+
+                img.src = "img/opis_A.jpg";
+                await this.waitOrSkip(15000);
+
+                img.src = "img/opis_B.jpg";
+                await this.waitOrSkip(15000);
+
+                this.inIntro = false;
+                overlay.style.display = "none";
+                this.displayLocation();
             }
 
-            wyswietlLokacje() {
-                this.trybTekstowy = false;
-                const lok = locations[this.currentRow][this.currentCol];
-                const teksty = document.querySelectorAll('.tekst-gry');
-                for (let i = 0; i < teksty.length; i++) {
-                    teksty[i].style.display = "block";
-                }
-                document.getElementById('pole-wpisywania').style.visibility = "visible";
+            updateCompass(directions) {
+                const masks = ["N", "S", "W", "E"];
+                masks.forEach(m => document.getElementById(`mask-${m}`).style.display = 'block'); // Ukryj wszystko
+                directions.forEach(d => document.getElementById(`mask-${d[0]}`).style.display = 'none'); // Odsłoń dostępne
+            }
 
-                document.getElementById('opis-lokacji').innerText = lok.desc;
-                document.getElementById('foto').src = "img/" + lok.path;
-                document.getElementById('obrazek-kontener').style.backgroundColor = lok.rgb;
+            // odświeżenie ui
+            displayLocation() {
+                if (this.inIntro) return;
+                this.textMode = false;
+                this.inputEl.disabled = false;
 
-                let wyjsciaTekst = "NOWHERE";
-                if (lok.directions.length > 0) {
-                    wyjsciaTekst = lok.directions.join(", ");
-                }
-                document.getElementById('wyjscia').innerText = "YOU CAN GO " + wyjsciaTekst;
+                const loc = locations[this.currentRow][this.currentCol];
 
-                this.aktualizujKompas(lok.directions);
+                document.querySelectorAll('.game-text').forEach(el => el.style.display = "block");
+                document.getElementById('input-area').style.visibility = "visible";
 
-                const itemyNaZiemi = lok.items.map(id => przedmiotyInfo[id].d);
-                if (itemyNaZiemi.length > 0) {
-                    document.getElementById('widzisz').innerText = "YOU SEE " + itemyNaZiemi.join(", ");
+                document.getElementById('location-description').innerText = loc.desc;
+                document.getElementById('view-img').src = "img/" + loc.path;
+                document.getElementById('image-wrapper').style.backgroundColor = loc.rgb;
+
+                let exitsStr = "";
+                if (loc.directions.length > 0) {
+                    exitsStr = "YOU CAN GO " + loc.directions.join(", ");
                 } else {
-                    document.getElementById('widzisz').innerText = "YOU SEE NOTHING";
+                    exitsStr = "YOU CAN GO NOWHERE";
                 }
+                document.getElementById('exits').innerText = exitsStr;
 
-                if (this.ekwipunekID) {
-                    document.getElementById('ekwipunek').innerText = "YOU ARE CARRYING " + przedmiotyInfo[this.ekwipunekID].d;
+                this.updateCompass(loc.directions);
+
+                const items = loc.items.map(id => itemsData[id].d);
+                let itemsStr = "";
+                if (items.length > 0) {
+                    itemsStr = "YOU SEE " + items.join(", ");
                 } else {
-                    document.getElementById('ekwipunek').innerText = "YOU ARE CARRYING NOTHING";
+                    itemsStr = "YOU SEE NOTHING";
                 }
+                document.getElementById('visible-items').innerText = itemsStr;
+
+                let inventoryStr = "";
+                if (this.inventoryId) {
+                    inventoryStr = "YOU ARE CARRYING " + itemsData[this.inventoryId].d;
+                } else {
+                    inventoryStr = "YOU ARE CARRYING NOTHING";
+                }
+                document.getElementById('inventory').innerText = inventoryStr;
 
                 this.inputEl.focus();
             }
 
-            pokazScianeTekstu(tekst) {
-                this.trybTekstowy = true;
-                document.getElementById('widzisz').style.display = "none";
-                document.getElementById('ekwipunek').style.display = "none";
-                document.getElementById('komunikat').style.display = "none";
-                document.getElementById('pole-wpisywania').style.visibility = "hidden";
-                document.getElementById('wyjscia').innerText = tekst;
-            }
-
-            setKomunikat(tresc, time = 3000) {
-                const el = document.getElementById('komunikat');
-                el.innerText = tresc;
-                clearTimeout(this.timerKomunikatu);
-                this.timerKomunikatu = setTimeout(() => {
-                    el.innerText = "";
-                }, time);
-            }
-
-            use(nazwa) {
-                if (!this.ekwipunekID || przedmiotyInfo[this.ekwipunekID].n !== nazwa.toUpperCase()) {
-                    this.setKomunikat("YOU AREN'T CARRYING ANYTHING LIKE THAT");
-                    return;
-                }
-
-                const currentYX = (this.currentRow + 1).toString() + (this.currentCol + 1).toString();
-                const dep = zaleznosci.find(z => z.id === this.ekwipunekID && z.loc === currentYX);
-
-                if (!dep) {
-                    this.setKomunikat("NOTHING HAPPENED");
-                    return;
-                }
-
-                if (dep.needsDeadDragon && !this.dragonDead) {
-                    this.setKomunikat("NOTHING HAPPENED");
-                    return;
-                }
-
-                const execute = () => {
-                    this.setKomunikat(dep.msg);
-
-                    if (dep.dragonKill) {
-                        this.dragonDead = true;
-                        locations[3][1].path = "DS68.gif";
-                        locations[3][1].desc = "You are inside a dragon's cave with a dead dragon";
-                        this.setKomunikat("The dragon ate your sheep and died!");
-                    }
-
-                    if (dep.ok) {
-                        this.milestones++;
-                        locations[this.currentRow][this.currentCol].items.push(dep.res);
-                        this.ekwipunekID = null;
-
-                        if (this.milestones === 6) {
-                            const lok = locations[this.currentRow][this.currentCol];
-                            this.setKomunikat("Your fake sheep is full of poison and ready to be eaten by the dragon");
-                            const exclude = [13, 17, 20, 23, 26, 29];
-                            lok.items = lok.items.filter(i => !exclude.includes(i));
-                            lok.items.push(37);
-                        }
-                    } else {
-                        this.ekwipunekID = dep.res;
-                    }
-
-                    if (dep.win) {
-                        setTimeout(() => {
-                            document.body.innerHTML = "<div style='text-align:center; margin-top:100px;'><h1>YOU WON!</h1><img src='img/win.gif'></div>";
-                        }, 2000);
-                    }
-                    this.wyswietlLokacje();
-                };
-
-                if (dep.delay) {
-                    const dots = dep.msg.split("...");
-                    this.setKomunikat(dots[0] + "...");
-                    setTimeout(execute, 2000);
-                } else {
-                    execute();
+            // zolte komunikaty
+            setMessage(content, time = 3000) {
+                const el = document.getElementById('message');
+                el.innerText = content;
+                clearTimeout(this.messageTimer);
+                if (time !== Infinity) {
+                    this.messageTimer = setTimeout(() => el.innerText = "", time);
                 }
             }
 
-            ruszSie(k) {
-                const lok = locations[this.currentRow][this.currentCol];
+            // Mechanika ruchu
+            async move(k) {
+                const loc = locations[this.currentRow][this.currentCol];
                 let dir = k;
                 if (k.length === 1) {
-                    const map = { "N": "NORTH", "S": "SOUTH", "E": "EAST", "W": "WEST" };
-                    dir = map[k];
+                    if (k === "N") { dir = "NORTH"; }
+                    else if (k === "S") { dir = "SOUTH"; }
+                    else if (k === "E") { dir = "EAST"; }
+                    else if (k === "W") { dir = "WEST"; }
                 }
 
-                if (lok.directions.includes(dir)) {
-                    if (this.currentRow === 3 && this.currentCol === 1 && dir === "WEST") {
-                        if (!this.dragonDead) {
-                            this.setKomunikat("You can't go that way... The dragon sleeps in a cave!");
-                            return;
-                        }
+                if (loc.directions.includes(dir)) {
+                    // blokada przed wejsciem za smoka przed zabiciem go
+                    if (this.currentRow === 3 && this.currentCol === 1 && dir === "WEST" && !this.dragonDead) {
+                        this.isInputLocked = true;
+                        this.inputEl.disabled = true;
+                        this.setMessage("You can't go that way...");
+                        await new Promise(r => setTimeout(r, 1500));
+                        this.setMessage("The dragon sleeps in a cave!");
+                        setTimeout(() => {
+                            this.isInputLocked = false;
+                            this.inputEl.disabled = false;
+                            this.inputEl.focus();
+                        }, 1500);
+                        return;
                     }
 
                     if (dir === "NORTH") this.currentRow--;
                     if (dir === "SOUTH") this.currentRow++;
                     if (dir === "EAST") this.currentCol++;
                     if (dir === "WEST") this.currentCol--;
-                    this.wyswietlLokacje();
+
+                    console.log("Moved to: " + dir);
+                    this.setMessage("YOU ARE GOING " + dir);
+                    this.displayLocation();
                 } else {
-                    this.setKomunikat("YOU CAN'T GO THAT WAY");
+                    this.setMessage("YOU CAN'T GO THAT WAY");
                 }
             }
 
-            take(nazwa) {
-                const lok = locations[this.currentRow][this.currentCol];
-                const idStr = Object.keys(przedmiotyInfo).find(key => przedmiotyInfo[key].n === nazwa.trim().toUpperCase());
 
-                if (!idStr || !lok.items.includes(parseInt(idStr))) {
-                    this.setKomunikat("THERE ISN'T ANYTHING LIKE THAT HERE");
-                    return;
-                }
-
+            take(name) {
+                const loc = locations[this.currentRow][this.currentCol];
+                const cleanName = name.trim().toUpperCase();
+                const idStr = Object.keys(itemsData).find(key => itemsData[key].n === cleanName);
                 const id = parseInt(idStr);
-                if (przedmiotyInfo[id].f === 0) {
-                    this.setKomunikat("YOU CAN'T CARRY IT");
-                    return;
-                }
-                if (this.ekwipunekID !== null) {
-                    this.setKomunikat("YOU ARE CARRYING SOMETHING");
-                    return;
-                }
 
-                this.ekwipunekID = id;
-                lok.items = lok.items.filter(item => item !== id);
-                this.setKomunikat("YOU ARE TAKING " + przedmiotyInfo[id].d);
-                this.wyswietlLokacje();
+                if (!idStr || !loc.items.includes(id)) {
+                    this.setMessage("THERE ISN'T ANYTHING LIKE THAT HERE");
+                    return;
+                }
+                if (itemsData[id].f === 0) { this.setMessage("YOU CAN'T CARRY IT"); return; }
+                if (this.inventoryId !== null) { this.setMessage("YOU ARE CARRYING SOMETHING"); return; }
+
+                this.inventoryId = id;
+                loc.items = loc.items.filter(i => i !== id);
+
+                console.log("Taken: " + cleanName);
+                this.setMessage("YOU ARE TAKING " + itemsData[id].d);
+                this.displayLocation();
             }
 
-            drop(nazwa) {
-                if (this.ekwipunekID === null || przedmiotyInfo[this.ekwipunekID].n !== nazwa.trim().toUpperCase()) {
-                    this.setKomunikat("YOU ARE NOT CARRYING IT");
+
+            drop(name) {
+                const cleanName = name.trim().toUpperCase();
+                if (!this.inventoryId || itemsData[this.inventoryId].n !== cleanName) {
+                    this.setMessage("YOU ARE NOT CARRYING IT");
                     return;
                 }
-                const lok = locations[this.currentRow][this.currentCol];
-                const collectableCount = lok.items.filter(id => przedmiotyInfo[id].f === 1).length;
-
-                if (collectableCount >= 3) {
-                    this.setKomunikat("YOU CAN'T STORE ANY MORE HERE");
+                const loc = locations[this.currentRow][this.currentCol];
+                // Limit 3 przedmiotów na lokację
+                if (loc.items.filter(id => itemsData[id].f === 1).length >= 3) {
+                    this.setMessage("YOU CAN'T STORE ANY MORE HERE");
                     return;
                 }
 
-                lok.items.push(this.ekwipunekID);
-                this.ekwipunekID = null;
-                this.wyswietlLokacje();
+                console.log("Dropped: " + cleanName);
+                loc.items.push(this.inventoryId);
+                this.inventoryId = null;
+                this.displayLocation();
+            }
+
+
+            async use(name) {
+                const cleanName = name.trim().toUpperCase();
+                if (!this.inventoryId || itemsData[this.inventoryId].n !== cleanName) {
+                    this.setMessage("YOU AREN'T CARRYING ANYTHING LIKE THAT");
+                    return;
+                }
+
+                // sprawdzenie czy współrzędne i ID przedmiotu pasują do interakcji
+                const currentCoords = (this.currentRow + 1).toString() + (this.currentCol + 1).toString();
+                const dep = interactions.find(z => z.id === this.inventoryId && z.loc === currentCoords);
+
+                if (!dep || (dep.needsDeadDragon && !this.dragonDead)) {
+                    this.setMessage("NOTHING HAPPENED");
+                    return;
+                }
+
+                this.isInputLocked = true;
+                this.inputEl.disabled = true;
+
+                const finalizeInteraction = () => {
+                    console.log("Used: " + cleanName);
+
+                    // wygrana
+                    if (dep.win) {
+                        document.body.innerHTML = `
+                            <div class="win-screen">
+                                <img src="img/win.gif" alt="You Win!">
+                                <h1>GOOD ENDING</h1>
+                            </div>`;
+                        return;
+                    }
+
+                    // use sheep pod smokiem
+                    if (dep.dragonKill) {
+                        this.dragonDead = true;
+                        locations[3][1].path = "DS68.gif"; // dead smok w jaskini
+                        locations[3][1].desc = "You are inside a dragon's cave with a dead dragon";
+                        locations[3][1].items.push(30);
+                    }
+
+                    // kamienie milowe logika
+                    if (dep.ok) {
+                        this.milestones++;
+                        if (dep.res !== null) {
+                            locations[this.currentRow][this.currentCol].items.push(dep.res);
+                        }
+                        this.inventoryId = null;
+
+                        if (this.milestones === 6) {
+                            locations[this.currentRow][this.currentCol].items = locations[this.currentRow][this.currentCol].items.filter(i => ![13, 17, 20, 23, 26, 29].includes(i));
+                            locations[this.currentRow][this.currentCol].items.push(37); // Owca gotowa
+                        }
+                    } else {
+                        // zwykła wymiana lub zużycie przedmiotu bez reszty
+                        this.inventoryId = dep.res;
+                    }
+
+                    this.isInputLocked = false;
+                    this.inputEl.disabled = false;
+                    this.displayLocation();
+
+                    
+                    if (dep.id === 24) {
+                        this.setMessage("That's enough sulphur for you");
+                    } else {
+                        this.setMessage(dep.msg);
+                    }
+                };
+
+                // timeouty kopanie
+                if (dep.delay && dep.id === 24) { 
+                    this.setMessage("You are digging...", Infinity);
+                    await new Promise(r => setTimeout(r, 2000));
+                    this.setMessage("and digging...", Infinity);
+                    await new Promise(r => setTimeout(r, 2000));
+                    finalizeInteraction();
+                } else if (dep.delay) {
+                    
+                    this.setMessage(dep.msg.split("...")[0] + "...", Infinity);
+                    setTimeout(finalizeInteraction, 2000);
+                } else {
+                    finalizeInteraction();
+                }
+            }
+
+            // vocab/gossip ekrany
+            showTextScreen(t) {
+                this.textMode = true;
+                this.inputEl.disabled = true;
+                document.getElementById('visible-items').style.display = "none";
+                document.getElementById('inventory').style.display = "none";
+                document.getElementById('message').style.display = "none";
+                document.getElementById('input-area').style.visibility = "hidden";
+                document.getElementById('exits').innerText = t;
             }
         }
 
-        const gra = new SilnikGry();
+
+        const game = new GameEngine();
+
 
         document.addEventListener('keydown', (e) => {
-            if (gra.trybTekstowy) {
-                gra.wyswietlLokacje();
+            if (game.inIntro) return;
+            if (game.textMode) {
+                game.displayLocation();
                 return;
             }
+            if (game.isInputLocked) return;
+
             if (e.key === "Enter") {
-                const val = gra.inputEl.value.trim().toUpperCase();
-                gra.inputEl.value = "";
+                const val = game.inputEl.value.trim().toUpperCase(); //case sensitive 2
+                game.inputEl.value = "";
                 if (!val) return;
-                const p = val.split(" ");
-                const cmd = p[0];
-                const arg = p.slice(1).join(" ");
 
-                const moveCmds = ["N", "NORTH", "S", "SOUTH", "E", "EAST", "W", "WEST"];
+                // parser komend
+                const spaceIndex = val.indexOf(" ");
+                let cmd, arg;
 
-                if (moveCmds.includes(cmd)) {
-                    gra.ruszSie(cmd);
-                } else if (cmd === "T" || cmd === "TAKE") {
-                    gra.take(arg);
-                } else if (cmd === "D" || cmd === "DROP") {
-                    gra.drop(arg);
-                } else if (cmd === "U" || cmd === "USE") {
-                    gra.use(arg);
-                } else if (cmd === "V" || cmd === "VOCABULARY") {
-                    gra.pokazScianeTekstu("NORTH or N, SOUTH or S, WEST or W, EAST or E\nTAKE or T, DROP or D, USE or U, GOSSIPS or G, VOCABULARY or V\n\nPRESS ANY KEY");
-                } else if (cmd === "G" || cmd === "GOSSIPS") {
-                    gra.pokazScianeTekstu("The woodcutter lost his home key...\nThe butcher likes fruit... The cooper\nis greedy... Dratewka plans to make a\npoisoned bait for the dragon... The\ntavern owner is buying food from the\npickers... Making a rag from a bag...\n\nPRESS ANY KEY");
+                if (spaceIndex === -1) {
+                    cmd = val;
+                    arg = "";
                 } else {
-                    gra.setKomunikat("UNKNOWN COMMAND, TRY USING VOCABULARY OR V");
+                    cmd = val.substring(0, spaceIndex);
+                    arg = val.substring(spaceIndex + 1);
                 }
+
+                // reakcja na komendy
+                if (["N", "NORTH", "S", "SOUTH", "E", "EAST", "W", "WEST"].includes(cmd)) game.move(cmd);
+                else if (cmd === "T" || cmd === "TAKE") game.take(arg);
+                else if (cmd === "D" || cmd === "DROP") game.drop(arg);
+                else if (cmd === "U" || cmd === "USE") game.use(arg);
+                else if (cmd === "V" || cmd === "VOCABULARY") game.showTextScreen("NORTH or N, SOUTH or S\nWEST or W, EAST or E\nTAKE (object) or T (object)\nDROP (object) or D (object)\nUSE (object) or U (object)\nGOSSIPS or G, VOCABULARY or V\nPRESS ANY KEY");
+                else if (cmd === "G" || cmd === "GOSSIPS") game.showTextScreen("The woodcutter lost his home key...\n The butcher likes fruit... The cooper\n is greedy... Dratewka plans to make a\n poisoned  bait for the dragon...  The\n tavern owner is buying food  from the\n pickers... Making a rag from a bag...\nPRESS ANY KEY");
+                else game.setMessage("UNKNOWN COMMAND, TRY USING VOCABULARY OR V");
             }
         });
     </script>
