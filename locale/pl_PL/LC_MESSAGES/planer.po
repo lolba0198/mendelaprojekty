@@ -1,0 +1,82 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Nie masz planów na dziś"
+msgstr ""
+
+msgid "Dzisiejsze plany"
+msgstr ""
+
+msgid "OK"
+msgstr ""
+
+msgid "Usuń"
+msgstr ""
+
+msgid "Anuluj"
+msgstr ""
+
+msgid "Dzień"
+msgstr ""
+
+msgid "Wybierz język"
+msgstr ""
+
+msgid "Pn"
+msgstr ""
+
+msgid "Wt"
+msgstr ""
+
+msgid "Śr"
+msgstr ""
+
+msgid "Cz"
+msgstr ""
+
+msgid "Pt"
+msgstr ""
+
+msgid "So"
+msgstr ""
+
+msgid "Nd"
+msgstr ""
+
+msgid "styczeń"
+msgstr ""
+
+msgid "luty"
+msgstr ""
+
+msgid "marzec"
+msgstr ""
+
+msgid "kwiecień"
+msgstr ""
+
+msgid "maj"
+msgstr ""
+
+msgid "czerwiec"
+msgstr ""
+
+msgid "lipiec"
+msgstr ""
+
+msgid "sierpień"
+msgstr ""
+
+msgid "wrzesień"
+msgstr ""
+
+msgid "październik"
+msgstr ""
+
+msgid "listopad"
+msgstr ""
+
+msgid "grudzień"
+msgstr ""

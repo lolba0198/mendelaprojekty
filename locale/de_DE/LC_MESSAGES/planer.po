@@ -1,0 +1,82 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Nie masz planów na dziś"
+msgstr "Du hast heute keine Pläne"
+
+msgid "Dzisiejsze plany"
+msgstr "Heutige Pläne"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Usuń"
+msgstr "Löschen"
+
+msgid "Anuluj"
+msgstr "Abbrechen"
+
+msgid "Dzień"
+msgstr "Tag"
+
+msgid "Wybierz język"
+msgstr "Sprache wählen"
+
+msgid "Pn"
+msgstr "Mo"
+
+msgid "Wt"
+msgstr "Di"
+
+msgid "Śr"
+msgstr "Mi"
+
+msgid "Cz"
+msgstr "Do"
+
+msgid "Pt"
+msgstr "Fr"
+
+msgid "So"
+msgstr "Sa"
+
+msgid "Nd"
+msgstr "So"
+
+msgid "styczeń"
+msgstr "Januar"
+
+msgid "luty"
+msgstr "Februar"
+
+msgid "marzec"
+msgstr "März"
+
+msgid "kwiecień"
+msgstr "April"
+
+msgid "maj"
+msgstr "Mai"
+
+msgid "czerwiec"
+msgstr "Juni"
+
+msgid "lipiec"
+msgstr "Juli"
+
+msgid "sierpień"
+msgstr "August"
+
+msgid "wrzesień"
+msgstr "September"
+
+msgid "październik"
+msgstr "Oktober"
+
+msgid "listopad"
+msgstr "November"
+
+msgid "grudzień"
+msgstr "Dezember"
